@@ -13,15 +13,34 @@ def emotion_detector(text_to_analyze):
     Returns:
         dict: Emotions with scores and the dominant emotion.
     """
+    if not text_to_analyze.strip():
+        return {
+        "anger": None,
+        "disgust": None,
+        "fear": None,
+        "joy": None,
+        "sadness": None,
+        "dominant_emotion": None,
+    }
+
     input_json = {"raw_document": {"text": text_to_analyze}}
 
     try:
         # Send a POST request to Watson NLP API
         response = requests.post(URL, headers=HEADERS, json=input_json)
-        response.raise_for_status()
+        if response.status_code == 400:
+            return {
+        "anger": None,
+        "disgust": None,
+        "fear": None,
+        "joy": None,
+        "sadness": None,
+        "dominant_emotion": None,
+        }
 
         # Convert response to a Python dictionary
         response_data = response.json()
+
 
         # Extract emotion scores
         emotion_predictions = response_data.get("emotionPredictions", [])
