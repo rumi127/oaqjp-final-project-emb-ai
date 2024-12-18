@@ -1,33 +1,53 @@
+import requests
+import json
 
-import requests  # Import the requests library for making HTTP requests
-
-# API endpoint and headers provided by the task
+# Watson NLP API details
 URL = "https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict"
 HEADERS = {"grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"}
 
 def emotion_detector(text_to_analyze):
-    
-    # Prepare the input JSON as required by the API
+    """
+    Detect emotions in text and format the output with the dominant emotion.
+    Args:
+        text_to_analyze (str): Text to analyze for emotions.
+    Returns:
+        dict: Emotions with scores and the dominant emotion.
+    """
     input_json = {"raw_document": {"text": text_to_analyze}}
 
     try:
-        # Send a POST request to the Watson NLP API
+        # Send a POST request to Watson NLP API
         response = requests.post(URL, headers=HEADERS, json=input_json)
-
-        # Check if the request was successful
         response.raise_for_status()
 
-        # Parse the JSON response and return the 'text' attribute
-        return response.json()
+        # Convert response to a Python dictionary
+        response_data = response.json()
+
+        # Extract emotion scores
+        emotion_predictions = response_data.get("emotionPredictions", [])
+        if emotion_predictions:
+            raw_emotions = emotion_predictions[0].get("emotion", {})
+
+            # Find the dominant emotion
+            dominant_emotion = max(raw_emotions, key=raw_emotions.get)
+
+            # Format the output
+            formatted_output = {
+                "anger": raw_emotions.get("anger", 0),
+                "disgust": raw_emotions.get("disgust", 0),
+                "fear": raw_emotions.get("fear", 0),
+                "joy": raw_emotions.get("joy", 0),
+                "sadness": raw_emotions.get("sadness", 0),
+                "dominant_emotion": dominant_emotion,
+            }
+            return formatted_output
+        return {"error": "No emotion predictions found"}
     except requests.exceptions.RequestException as e:
-        # Handle any request errors
         return {"error": str(e)}
 
+# Example usage
 if __name__ == "__main__":
-    # Example text to analyze
-    test_text = "I am feeling so happy and joyful today!"
-    result = emotion_detector(test_text)
+    text = "I am so happy and excited!"
+    result = emotion_detector(text)
     print(result)
-
-
 
